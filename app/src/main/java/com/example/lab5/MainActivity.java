@@ -76,12 +76,19 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         databaseProducts.addValueEventListener(new ValueEventListener() {
            @Override
-           public void onDataChange(@NonNull DataSnapshot snapshot) {
+           public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 products.clear();
+                for(DataSnapshot postSnapshot : dataSnapshot.getChildren()){
+                    Product product = postSnapshot.getValue(Product.class);
+                    products.add(product);
+                }
+
+                ProductList productsAdapter = new ProductList(MainActivity.this, products);
+                listViewProducts.setAdapter(productsAdapter);
            }
 
            @Override
-           public void onCancelled(@NonNull DatabaseError error) {
+           public void onCancelled(@NonNull DatabaseError databaseError) {
 
            }
             }
@@ -128,17 +135,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateProduct(String id, String name, double price) {
-
-        Toast.makeText(getApplicationContext(), "NOT IMPLEMENTED YET", Toast.LENGTH_LONG).show();
+        DatabaseReference dr = FirebaseDatabase.getInstance().getReference("products").child(id);
+        Product product = new Product(id, name, price);
+        dr.setValue(product);
+        Toast.makeText(getApplicationContext(), "Product Updated", Toast.LENGTH_LONG).show();
     }
 
-    private void deleteProduct(String id) {
-
-        Toast.makeText(getApplicationContext(), "NOT IMPLEMENTED YET", Toast.LENGTH_LONG).show();
+    private boolean deleteProduct(String id) {
+        DatabaseReference dr = FirebaseDatabase.getInstance().getReference("products").child(id);
+        dr.removeValue();
+        Toast.makeText(getApplicationContext(), "Product Deleted", Toast.LENGTH_LONG).show();
+        return true;
     }
 
     private void addProduct() {
+        String name = editTextName.getText().toString().trim();
+        double price = Double.parseDouble(String.valueOf(editTextPrice.getText().toString()));
 
-        Toast.makeText(this, "NOT IMPLEMENTED YET", Toast.LENGTH_LONG).show();
+        if(!TextUtils.isEmpty(name)){
+            String id = databaseProducts.push().getKey();
+
+            Product product = new Product(id, name , price);
+            databaseProducts.child(id).setValue(product);
+
+            editTextName.setText("");
+            editTextPrice.setText("");
+
+            Toast.makeText(this,"Product added", Toast.LENGTH_LONG).show();
+        }
+        else{
+            Toast.makeText(this,"Please enter a name", Toast.LENGTH_LONG).show();
+        }
     }
 }
